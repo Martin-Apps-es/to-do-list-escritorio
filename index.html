@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis tareas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #00a86b;
+            margin: 0;
+            padding: 20px;
+            color: white;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .add-task-btn {
+            background-color: white;
+            color: #00a86b;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .task-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .task-card {
+            background-color: white;
+            color: #00a86b;
+            border-radius: 10px;
+            padding: 15px;
+            width: 200px;
+        }
+        .task-card button {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #00a86b;
+            color: white;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: white;
+            color: #00a86b;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+        }
+        .modal-content input, .modal-content textarea {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        .modal-buttons button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .save-btn, .update-btn, .complete-btn {
+            background-color: #00a86b;
+            color: white;
+        }
+        .cancel-btn {
+            background-color: #f0f0f0;
+            color: #00a86b;
+        }
+        .delete-btn {
+            background-color: #ff4d4d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Mis tareas</h1>
+        <button class="add-task-btn" onclick="openAddTaskModal()">Añadir tarea</button>
+    </div>
+    <div id="taskList" class="task-list"></div>
+
+    <div id="addTaskModal" class="modal">
+        <div class="modal-content">
+            <h2>Añadir tarea</h2>
+            <input type="text" id="title" placeholder="Título">
+            <textarea id="description" placeholder="Descripción de la tarea"></textarea>
+            <input type="text" id="difficulty" placeholder="Dificultad">
+            <input type="text" id="priority" placeholder="Prioridad">
+            <input type="text" id="area" placeholder="Área">
+            <input type="date" id="dueDate">
+            <input type="text" id="location" placeholder="Lugar de entrega">
+            <input type="text" id="colleagues" placeholder="Compañeros">
+            <input type="file" id="fileUpload">
+            <div class="modal-buttons">
+                <button class="save-btn" onclick="saveTask()">Guardar tarea</button>
+                <button class="cancel-btn" onclick="closeModal('addTaskModal')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewTaskModal" class="modal">
+        <div class="modal-content">
+            <h2>Ver tarea</h2>
+            <p id="viewTitle"></p>
+            <p id="viewDescription"></p>
+            <p id="viewDifficulty"></p>
+            <p id="viewPriority"></p>
+            <p id="viewArea"></p>
+            <p id="viewDueDate"></p>
+            <p id="viewLocation"></p>
+            <p id="viewColleagues"></p>
+            <p id="viewFile"></p>
+            <div class="modal-buttons">
+                <button class="complete-btn" onclick="markAsCompleted()">Marcar como completada</button>
+                <button class="delete-btn" onclick="deleteTask()">Eliminar tarea</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let currentTaskIndex = -1;
+
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+            tasks.forEach((task, index) => {
+                const taskCard = document.createElement('div');
+                taskCard.className = 'task-card';
+                taskCard.innerHTML = `
+                    <h3>${task.title || 'Sin título'}</h3>
+                    <p>Prioridad: ${task.priority || 'No especificada'}</p>
+                    <p>Dificultad: ${task.difficulty || 'No especificada'}</p>
+                    <p>Área: ${task.area || 'No especificada'}</p>
+                    <button onclick="openViewTaskModal(${index})">Ver información</button>
+                    <button onclick="markAsCompleted(${index})">Completada</button>
+                `;
+                taskList.appendChild(taskCard);
+            });
+        }
+
+        function openAddTaskModal() {
+            document.getElementById('addTaskModal').style.display = 'block';
+        }
+
+        function openViewTaskModal(index) {
+            currentTaskIndex = index;
+            const task = tasks[index];
+            document.getElementById('viewTitle').textContent = `Título: ${task.title || 'Sin título'}`;
+            document.getElementById('viewDescription').textContent = `Descripción: ${task.description || 'Sin descripción'}`;
+            document.getElementById('viewDifficulty').textContent = `Dificultad: ${task.difficulty || 'No especificada'}`;
+            document.getElementById('viewPriority').textContent = `Prioridad: ${task.priority || 'No especificada'}`;
+            document.getElementById('viewArea').textContent = `Área: ${task.area || 'No especificada'}`;
+            document.getElementById('viewDueDate').textContent = `Fecha límite: ${task.dueDate || 'No especificada'}`;
+            document.getElementById('viewLocation').textContent = `Lugar de entrega: ${task.location || 'No especificado'}`;
+            document.getElementById('viewColleagues').textContent = `Compañeros: ${task.colleagues || 'Ninguno'}`;
+            document.getElementById('viewFile').textContent = task.fileName ? `Archivo adjunto: ${task.fileName}` : 'Sin archivo adjunto';
+            
+            document.getElementById('viewTaskModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function saveTask() {
+            const fileInput = document.getElementById('fileUpload');
+            const file = fileInput.files[0];
+            const newTask = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                difficulty: document.getElementById('difficulty').value,
+                priority: document.getElementById('priority').value,
+                area: document.getElementById('area').value,
+                dueDate: document.getElementById('dueDate').value,
+                location: document.getElementById('location').value,
+                colleagues: document.getElementById('colleagues').value,
+                fileName: file ? file.name : null
+            };
+            tasks.push(newTask);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            closeModal('addTaskModal');
+            renderTasks();
+            document.getElementById('addTaskModal').querySelector('form').reset();
+        }
+
+        function markAsCompleted(index) {
+            if (index === undefined) index = currentTaskIndex;
+            tasks.splice(index, 1);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            closeModal('viewTaskModal');
+            renderTasks();
+        }
+
+        function deleteTask() {
+            tasks.splice(currentTaskIndex, 1);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            closeModal('viewTaskModal');
+            renderTasks();
+        }
+
+        renderTasks();
+    </script>
+</body>
+</html>
